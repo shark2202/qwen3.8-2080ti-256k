@@ -25,6 +25,7 @@ Replay:
 ```bash
 git clone https://github.com/kvmem/kvmem-llama.cpp
 KVMEM_DIR=$PWD/kvmem-llama.cpp scripts/apply-engine-patches.sh          # Linux, macOS, git-bash
+scripts/bootstrap-engine.sh -e kvmem                                    # Linux: clone + patch + build in one
 ```
 
 ```powershell

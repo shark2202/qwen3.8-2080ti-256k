@@ -91,7 +91,7 @@ A fourth, non-model file matters for reproduction: the chat template from
 
 Requirements:
 
-- Windows 11
+- Windows 11 (the platform the published numbers were measured on), or Ubuntu 22.04 via [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md)
 - NVIDIA Turing GPU with 22 GB VRAM (validated on RTX 2080 Ti 22 GB)
 - Mode A: `llama-server.exe` from llama.cpp `16378d9` built with the [Turing routing patch](patches/turing-mmvq-mmq-routing.diff)
 - Mode B: the KVMem engine — clone upstream and replay the two patches in `patches/` (one command on Windows: `scripts\bootstrap-engine.ps1 -Build`)
@@ -114,6 +114,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-kvmem.ps1   # Mode B: 2
 ```
 
 Run a start script again to stop the service it started. It refuses to kill another process that already owns the port.
+
+On Ubuntu 22.04 the same recipe has Linux-native assets — `config.example.sh`, `scripts/bootstrap-engine.sh` (clone + patch + build in one command), `scripts/check-config.sh` and the two `scripts/start-*.sh` launchers, which produce the same argument lists as the PowerShell ones. Full walk-through: [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md).
 
 ## Core configuration
 

@@ -1,9 +1,12 @@
 config.ps1
+config.sh
 *.log
 *.gguf
 build/
 build-win/
+build-linux/
 kvmem-llama.cpp/
+llama.cpp/
 logs/
 .vscode/
 .DS_Store

@@ -91,7 +91,7 @@
 
 前置条件：
 
-- Windows 11
+- Windows 11(已发布数字的实测平台)，或 Ubuntu 22.04(见 [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md))
 - 22 GB 显存的 NVIDIA Turing 显卡（在 RTX 2080 Ti 22 GB 上验证）
 - 模式 A：llama.cpp `16378d9` 构建出的 `llama-server.exe`，并应用 [Turing 路由补丁](patches/turing-mmvq-mmq-routing.diff)
 - 模式 B：KVMem 引擎——克隆上游后重放 `patches/` 里的两份补丁（Windows 一条命令：`scripts\bootstrap-engine.ps1 -Build`）
@@ -114,6 +114,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-kvmem.ps1   # 模式 B�
 ```
 
 再次运行同一启动脚本会停止它启动的服务；若端口被其他程序占用，它只报错，不会静默杀掉用户正在使用的服务。
+
+Ubuntu 22.04 上同一套配方有原生 Linux 资产——`config.example.sh`、`scripts/bootstrap-engine.sh`(克隆 + 补丁 + 构建一条命令)、`scripts/check-config.sh` 以及两个 `scripts/start-*.sh` 启动器,生成的参数列表与 PowerShell 版逐项一致。完整步骤见 [docs/DEPLOY_UBUNTU.md](docs/DEPLOY_UBUNTU.md)。
 
 ## 核心参数
 
