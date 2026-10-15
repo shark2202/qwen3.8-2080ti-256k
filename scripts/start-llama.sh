@@ -145,6 +145,6 @@ nohup "$LlamaServer" \
     >"$stdout" 2>"$stderr" &
 echo "API:  http://${Host}:$Port  (pid $!)"
 if [ "$Host" = "0.0.0.0" ]; then
-    echo "      LAN:  http://$(hostname -I | awk '{print $1}'):$Port/v1  (open to the whole subnet)"
+    echo "      LAN:  http://$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}'):$Port/v1  (open to the whole subnet)"
 fi
 echo "Logs: $stderr"
