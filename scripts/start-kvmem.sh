@@ -38,6 +38,7 @@ fi
 : "${UBatchSize:=512}"
 : "${MmvqMax:=4}"
 : "${MmvqAll:=1}"
+: "${Host:=127.0.0.1}"
 : "${Port:=8080}"
 : "${Threads:=8}"
 : "${LogDir:=$REPO_ROOT/logs}"
@@ -94,11 +95,17 @@ if [ -n "${MmprojModel:-}" ] && [ -f "$MmprojModel" ]; then
     mmproj_args=(--mmproj "$MmprojModel" --no-mmproj-offload)
 fi
 
+auth_args=()
+if [ -n "${ApiKey:-}" ]; then
+    auth_args=(--api-key "$ApiKey")
+fi
+
 echo "Starting mode B: KVMem 256K logical (working set $((KVMemBudget + GenerationReserve)) tokens, spec=$SpecType depth=$DraftDepth MMVQ_MAX=$MmvqMax ALL=$MmvqAll)"
 nohup "$KVMemServer" \
     --model "$TargetModel" \
     --alias qwen3.8-local \
-    --host 127.0.0.1 --port "$Port" \
+    --host "$Host" --port "$Port" \
+    "${auth_args[@]}" \
     -c "$ContextSize" \
     -n "$GenerationReserve" \
     -ngl 99 \
@@ -125,5 +132,8 @@ nohup "$KVMemServer" \
     --threads-batch "$Threads" \
     "${mmproj_args[@]}" \
     >"$stdout" 2>"$stderr" &
-echo "API:  http://127.0.0.1:$Port  (pid $!)"
+echo "API:  http://${Host}:$Port  (pid $!)"
+if [ "$Host" = "0.0.0.0" ]; then
+    echo "      LAN:  http://$(hostname -I | awk '{print $1}'):$Port/v1  (open to the whole subnet)"
+fi
 echo "Logs: $stderr"

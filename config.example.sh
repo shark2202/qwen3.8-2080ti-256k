@@ -11,6 +11,8 @@ DraftModel='/data/models/Q2-LynnStyle/dflash2-qwen38-27b-Q4_K_M.gguf'
 MmprojModel='/data/models/Q2-LynnStyle/mmproj-Qwen3.8-27B-Q4_K_M.gguf'   # optional; kept in host RAM
 ChatTemplate='/data/models/chat_template.jinja'                          # see docs/MODELS.md
 #LogDir=''          # optional; defaults to <repo>/logs
+Host=127.0.0.1      # bind address; 0.0.0.0 serves the whole LAN (no auth unless ApiKey is set)
+#ApiKey='sk-local'  # optional; when set, clients send Authorization: Bearer <key>
 Port=8080
 Threads=8           # host threads; match the physical cores of the machine
 
