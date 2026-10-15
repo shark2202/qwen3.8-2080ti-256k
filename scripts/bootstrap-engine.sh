@@ -52,13 +52,18 @@ if [ "$DO_BUILD" -eq 1 ]; then
     for tool in cmake ninja; do
         command -v "$tool" >/dev/null 2>&1 || { echo "missing tool: $tool (see docs/DEPLOY_UBUNTU.md)" >&2; exit 1; }
     done
-    # The NVIDIA apt packages put nvcc under /usr/local/cuda without touching PATH.
-    if ! command -v nvcc >/dev/null 2>&1 && [ -x /usr/local/cuda/bin/nvcc ]; then
-        export PATH="/usr/local/cuda/bin:$PATH"
+    # Prefer /usr/local/cuda over Ubuntu's distro toolkit 11.5, which shadows /usr/local/cuda/bin/nvcc in PATH and cmake resolves the
+    # toolkit from /usr/include, so PATH alone does not override it — CUDACXX and
+    # CUDAToolkit_ROOT do. An explicit CUDACXX wins.
+    if [ -x /usr/local/cuda/bin/nvcc ] && [ -z "${CUDACXX:-}" ]; then
+        export CUDACXX=/usr/local/cuda/bin/nvcc
+        export CUDAToolkit_ROOT=/usr/local/cuda
         export CUDA_HOME=/usr/local/cuda
+        export PATH="/usr/local/cuda/bin:$PATH"
     fi
-    command -v nvcc >/dev/null 2>&1 || { echo 'missing tool: nvcc (install a CUDA toolkit, see docs/DEPLOY_UBUNTU.md)' >&2; exit 1; }
-    echo "using $(command -v nvcc) ($(nvcc --version | tail -1 | awk '{print $NF}'))"
+    NVCC_BIN="${CUDACXX:-$(command -v nvcc || true)}"
+    [ -n "$NVCC_BIN" ] || { echo 'missing tool: nvcc (install a CUDA toolkit, see docs/DEPLOY_UBUNTU.md)' >&2; exit 1; }
+    echo "using $NVCC_BIN ($("$NVCC_BIN" --version | tail -1 | awk '{print $NF}'))"
 fi
 
 configure() {

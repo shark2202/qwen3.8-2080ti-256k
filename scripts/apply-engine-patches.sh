@@ -56,7 +56,12 @@ git -C "$NATIVE_KV" checkout --quiet "$KV_OUTER_PIN"
 apply_patch "$NATIVE_KV" "$NATIVE_OUTER" "kvmem-outer-local-changes.patch (10 files)"
 
 echo "[2/4] llama.cpp submodule -> $KV_LLAMA_PIN"
-git -C "$NATIVE_KV" submodule update --init --recursive llama.cpp
+# Fetch/init only: a plain `submodule update` would try to move the submodule to
+# the commit the outer tree records and abort on a dirty (already patched) tree.
+# The pin below is the authority and is a no-op when already checked out.
+if [ ! -e "$NATIVE_SUB/.git" ]; then
+    git -C "$NATIVE_KV" submodule update --init --recursive llama.cpp
+fi
 git -C "$NATIVE_SUB" checkout --quiet "$KV_LLAMA_PIN"
 
 echo "[3/4] llama.cpp patch"
