@@ -29,7 +29,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_PATH="$REPO_ROOT/config.sh"
+CONFIG_PATH="${CONFIG_PATH:-$REPO_ROOT/config.sh}"
 if [ ! -f "$CONFIG_PATH" ]; then
     echo 'Missing config.sh. Copy config.example.sh to config.sh first.' >&2
     exit 1
@@ -51,8 +51,20 @@ fi
 : "${Threads:=8}"
 : "${LogDir:=$REPO_ROOT/logs}"
 
+: "${ModelAlias:=qwen3.8-local}"
+# A draft model is only meaningful when the spec list names a draft-* proposal
+# source. ngram-mod and none work without one -- that is the small-model path
+# (docs/SMALL_MODELS.md): a DFlash2 drafter trained for the 27B is wrong for any
+# other target, and requiring its file would refuse to start.
+spec_needs_draft=0
+case ",${LlamaSpecType:-}," in
+    *,draft-*) spec_needs_draft=1 ;;
+esac
+
 fail=0
-for path in "$LlamaServer" "$TargetModel" "$DraftModel" "$ChatTemplate"; do
+required=("$LlamaServer" "$TargetModel" "$ChatTemplate")
+[ "$spec_needs_draft" = 1 ] && required+=("$DraftModel")
+for path in "${required[@]}"; do
     if [ -z "${path:-}" ] || [ ! -f "$path" ]; then
         echo "Missing required file: ${path:-<unset>}" >&2
         fail=1
@@ -111,11 +123,16 @@ auth_args=()
 if [ -n "${ApiKey:-}" ]; then
     auth_args=(--api-key "$ApiKey")
 fi
+draft_args=()
+if [ "$spec_needs_draft" = 1 ]; then
+    draft_args=(--spec-draft-model "$DraftModel" --spec-draft-n-max "$LlamaDraftDepth" \
+                --spec-draft-type-k f16 --spec-draft-type-v f16)
+fi
 
 echo "Starting mode A: llama.cpp + DFlash2 (ctx=$LlamaContext KV=$LlamaKVType spec=$LlamaSpecType depth=$LlamaDraftDepth MMVQ_MAX=$MmvqMax ALL=$MmvqAll)"
 nohup "$LlamaServer" \
     --model "$TargetModel" \
-    --alias qwen3.8-local \
+    --alias "$ModelAlias" \
     --host "$Host" --port "$Port" \
     "${auth_args[@]}" \
     --ctx-size "$LlamaContext" \
@@ -126,10 +143,7 @@ nohup "$LlamaServer" \
     --cache-type-k "$LlamaKVType" \
     --cache-type-v "$LlamaKVType" \
     --spec-type "$LlamaSpecType" \
-    --spec-draft-model "$DraftModel" \
-    --spec-draft-n-max "$LlamaDraftDepth" \
-    --spec-draft-type-k f16 \
-    --spec-draft-type-v f16 \
+    "${draft_args[@]}" \
     --jinja \
     --chat-template-file "$ChatTemplate" \
     --reasoning on \

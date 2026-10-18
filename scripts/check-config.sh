@@ -5,13 +5,20 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_PATH="$REPO_ROOT/config.sh"
+CONFIG_PATH="${CONFIG_PATH:-$REPO_ROOT/config.sh}"
 if [ ! -f "$CONFIG_PATH" ]; then
     echo 'Copy config.example.sh to config.sh first.' >&2
     exit 1
 fi
 # shellcheck source=/dev/null
 . "$CONFIG_PATH"
+
+# A DraftModel is required only when a spec source names a draft-* proposal --
+# ngram-mod / none run without one (small models, docs/SMALL_MODELS.md).
+spec_needs_draft=0
+case ",${LlamaSpecType:-},${SpecType:-}," in
+    *draft-*) spec_needs_draft=1 ;;
+esac
 
 show_path() {
     local label="$1" path="${2:-}" optional="$3"
@@ -26,7 +33,7 @@ show_path() {
 
 echo '--- shared files ---'
 show_path target_model  "${TargetModel:-}"  0
-show_path draft_model   "${DraftModel:-}"   0
+show_path draft_model   "${DraftModel:-}"   $([ "$spec_needs_draft" = 1 ] && echo 0 || echo 1)
 show_path mmproj        "${MmprojModel:-}"  1
 show_path chat_template "${ChatTemplate:-}" 0
 
@@ -43,10 +50,13 @@ if [ -n "${LlamaContext:-}" ]; then
     mmvq_all="${MmvqAll:-1}"
     echo "MMVQ routing: GGML_MMVQ_MAX=$mmvq_max GGML_MMVQ_ALL=$mmvq_all"
     width=$((draft_depth + 1))
-    if [ "$mmvq_max" -ge "$width" ]; then
+    if [ "$mmvq_max" -ge "$width" ] && [ "$spec_needs_draft" = 1 ]; then
         echo "  WARNING: MMVQ_MAX ($mmvq_max) >= verification width ($width): the routing patch will not fire."
     fi
 fi
+    if [ "$spec_needs_draft" = 0 ]; then
+        echo '  note: spec has no draft-* source, so DraftModel is not required (docs/SMALL_MODELS.md)'
+    fi
 
 echo
 echo '--- mode B: KVMem (256K logical) ---'

@@ -14,6 +14,7 @@ ChatTemplate='/data/models/chat_template.jinja'                          # see d
 Host=127.0.0.1      # bind address; 0.0.0.0 serves the whole LAN (no auth unless ApiKey is set)
 #ApiKey='sk-local'  # optional; when set, clients send Authorization: Bearer <key>
 Port=8080
+#ModelAlias='qwen3.8-local'  # /v1/models alias; set it when the port carries another target
 Threads=8           # host threads; match the physical cores of the machine
 
 # ---- mode A: upstream llama.cpp + DFlash2, 128K (scripts/start-llama.sh) ----
@@ -38,3 +39,11 @@ DraftDepth=6
 SpecType=draft-dflash,ngram-mod
 BatchSize=1024
 UBatchSize=512
+# ---- alternative: a small target with no drafter (docs/SMALL_MODELS.md) ----
+# Any GGUF the engine knows loads; for a small dense model only three values change:
+#   TargetModel     the small GGUF (4B-14B at Q4_K_M/Q5_K_M fits a 22 GB card with room)
+#   LlamaSpecType   none or ngram-mod -- a DFlash2 drafter trained for the 27B is wrong
+#                   for another target, and with no draft-* source the launcher stops
+#                   requiring DraftModel and stops passing --spec-draft-*
+#   MmvqAll         0 for a K-quant-dominated weight set (1 costs ~9% there)
+# Chat template, reasoning flags and thread count can stay as they are.

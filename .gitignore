@@ -1,5 +1,6 @@
 config.ps1
 config.sh
+config.small.sh
 *.log
 *.gguf
 build/
@@ -11,3 +12,6 @@ logs/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# python 缓存
+__pycache__/

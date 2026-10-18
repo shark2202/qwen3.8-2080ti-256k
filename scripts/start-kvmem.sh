@@ -18,7 +18,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_PATH="$REPO_ROOT/config.sh"
+CONFIG_PATH="${CONFIG_PATH:-$REPO_ROOT/config.sh}"
 if [ ! -f "$CONFIG_PATH" ]; then
     echo 'Missing config.sh. Copy config.example.sh to config.sh first.' >&2
     exit 1
@@ -42,9 +42,18 @@ fi
 : "${Port:=8080}"
 : "${Threads:=8}"
 : "${LogDir:=$REPO_ROOT/logs}"
+: "${ModelAlias:=qwen3.8-local}"
+
+# Same rule as mode A: a draft-* spec needs its drafter, ngram/none do not.
+spec_needs_draft=0
+case ",${SpecType:-}," in
+    *,draft-*) spec_needs_draft=1 ;;
+esac
 
 fail=0
-for path in "$KVMemServer" "$TargetModel" "$DraftModel" "$ChatTemplate"; do
+required=("$KVMemServer" "$TargetModel" "$ChatTemplate")
+[ "$spec_needs_draft" = 1 ] && required+=("$DraftModel")
+for path in "${required[@]}"; do
     if [ -z "${path:-}" ] || [ ! -f "$path" ]; then
         echo "Missing required file: ${path:-<unset>}" >&2
         fail=1
@@ -99,11 +108,15 @@ auth_args=()
 if [ -n "${ApiKey:-}" ]; then
     auth_args=(--api-key "$ApiKey")
 fi
+draft_args=()
+if [ "$spec_needs_draft" = 1 ]; then
+    draft_args=(--spec-draft-model "$DraftModel" --spec-draft-n-max "$DraftDepth")
+fi
 
 echo "Starting mode B: KVMem 256K logical (working set $((KVMemBudget + GenerationReserve)) tokens, spec=$SpecType depth=$DraftDepth MMVQ_MAX=$MmvqMax ALL=$MmvqAll)"
 nohup "$KVMemServer" \
     --model "$TargetModel" \
-    --alias qwen3.8-local \
+    --alias "$ModelAlias" \
     --host "$Host" --port "$Port" \
     "${auth_args[@]}" \
     -c "$ContextSize" \
@@ -116,8 +129,7 @@ nohup "$KVMemServer" \
     --kvmem-block-tokens "$KVMemBlockTokens" \
     --kv-dtype "$KVDtype" \
     --spec-type "$SpecType" \
-    --spec-draft-model "$DraftModel" \
-    --spec-draft-n-max "$DraftDepth" \
+    "${draft_args[@]}" \
     --spec-kv-dtype f16 \
     --chat-template-file "$ChatTemplate" \
     --reasoning-effort low \
