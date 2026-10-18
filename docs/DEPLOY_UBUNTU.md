@@ -101,15 +101,15 @@ First build of both engines takes roughly 15–40 minutes depending on CPU.
 pip install -U "huggingface_hub[cli]"
 hf download \
   nerkyor/Qwen3.8-27B-EfficientThink-Uncensored-K3-Opus5-Grok4.6-GPT5.6Sol-SFT-SimPO-DFlash2-GGUF \
-  --include "Q2-LynnStyle/*" --local-dir ~/models
-cd ~/models/Q2-LynnStyle && sha256sum --ignore-missing -c SHA256SUMS
+  --include "Q2-LynnStyle/*" --local-dir ~/ai-work/models/llm
+cd ~/ai-work/models/llm/Q2-LynnStyle && sha256sum --ignore-missing -c SHA256SUMS
 ```
 
 Also download the chat template — it is what implements `reasoning_effort`:
 
 ```bash
-hf download froggeric/Qwen-Fixed-Chat-Templates chat_template.jinja --local-dir ~/models
-sha256sum ~/models/chat_template.jinja   # expect c47c82b0544752d4... (v22.4)
+hf download froggeric/Qwen-Fixed-Chat-Templates chat_template.jinja --local-dir ~/ai-work/models/llm
+sha256sum ~/ai-work/models/llm/chat_template.jinja   # expect c47c82b0544752d4... (v22.4)
 ```
 
 If the hash differs, upstream has moved on (the file was at v22.5 at the time

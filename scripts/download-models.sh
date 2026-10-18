@@ -2,7 +2,7 @@
 # Download the model files both run modes need (walkthrough: docs/DEPLOY_UBUNTU.md
 # §5; full file list and checksums: docs/MODELS.md).
 #
-#   scripts/download-models.sh                     # into ~/models, auto endpoint
+#   scripts/download-models.sh                     # into ~/ai-work/models/llm, auto endpoint
 #   scripts/download-models.sh -d /data/models     # elsewhere
 #   scripts/download-models.sh --endpoint https://huggingface.co
 #
@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-MODELS_DIR="$HOME/models"
+MODELS_DIR="$HOME/ai-work/models/llm"
 ENDPOINT="${HF_ENDPOINT:-}"
 GGUF_REPO=nerkyor/Qwen3.8-27B-EfficientThink-Uncensored-K3-Opus5-Grok4.6-GPT5.6Sol-SFT-SimPO-DFlash2-GGUF
 TEMPLATE_REPO=froggeric/Qwen-Fixed-Chat-Templates
