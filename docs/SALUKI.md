@@ -95,6 +95,77 @@ Saluki           (2.346 bpw) + DFlash2    11510 MiB   63.7 tok/s
 
 - 每个变体**只跑一次**（无重复测量）；题面只有 7 条、中位数取 n=3–4；`dec 3/4` 的短输出测的是首 token 不是速度。
 - 采样用 harness 的 `0.0/0.6`，不是生产 `0.7`；两个 target 的题面输出长度不同，逐步对比带噪声。
-- **没测质量**：只验了"不坏"（sanity / 连贯 / tool call 格式）。厂商自称 tool-calling 保留 96%、竞赛数学掉到 82–85%，本仓库**没有可比的真实任务集**，所以这条既没证实也没推翻。
+- **质量：只做了 §7 那一轮真实任务 A/B（n=1）** —— 单步工具调用与现役 27B 完全打平，**多步自主排错明显更弱**。没有跑真实创作/编码任务的成对评分；厂商自称 tool-calling 保留 96%、竞赛数学掉到 82–85%，前者方向被 §7 部分印证、后者仍未验。
 - 没测长上下文 / 重复内容下 `ngram-mod` 的贡献；没测 128K/256K；没测视觉附件（主件 text-only）。
 - 厂商分数全部是自测、未独立复现，且**没有公开完整压缩配方**。
+---
+
+## 7. pi-agent 真实任务 A/B（2026-10-20）
+
+> 前六节都是"发一次 chat 请求"；但"能不能当日常 agent 的模型"只有让 **agent 自己跑一次带工具的任务**才算数。
+> 做法：让本机的 pi 分别以两个模型为后端，跑**同一题面**，答案设计成**逐字可判**。
+> 脚本 `saluki-test/agent_probe2.sh`（未入仓），原始事件流 JSONL 与产物在 `saluki-test/agent-probe2/`。
+
+### 7.1 接线
+
+`~/.pi/agent/models.json` 里加两个 provider（**原有 provider 与 key 未动**，改动已备份）：
+
+```json
+"llama-local":  { "api": "openai-completions", "baseUrl": "http://127.0.0.1:8080/v1",
+                  "apiKey": "local-no-auth", "models": [{ "id": "qwen38-27b-lynstyle", "contextWindow": 65536 }] }
+"llama-saluki": { "api": "openai-completions", "baseUrl": "http://127.0.0.1:8081/v1",
+                  "apiKey": "local-no-auth", "models": [{ "id": "saluki-27b", "contextWindow": 65536 }] }
+```
+
+服务参数两边完全一致：`-c 65536 --parallel 1 -np 1 -ngl 99 -fa on -ctk q8_0 -ctv q8_0 --jinja
+--chat-template-file chat_template.jinja --reasoning on --reasoning-effort low`（**无投机**）。
+调用：`pi --provider <p> --model <m> --mode json --no-session --tools read,write,bash,ls,grep,find -p "<题面>"`。
+
+**门禁（踩过坑）**：起服务前必须等 ComfyUI 队列为空 **并** `POST /free` 卸载它的模型，**再确认整卡占用掉下来** ——
+"队列空"不等于"显存空"（实测 queue=0 时仍占 17732 MiB），只看队列会让 llama-server 直接 cudaMalloc OOM。
+
+### 7.2 题面与判分
+
+| 题 | 要求 | 正确答案 |
+|---|---|---|
+| **A** 读文件 + 精确提取 | 读 `docs/LAUNCH_PARAMS.md`，答出 `GGML_MMVQ_ALL` 行里无投机时 ALL=0/1 的 tok/s，以及 `--spec-draft-n-max` 行里 MTP n-max 2/4 的 tok/s | `A1=23.2/23.2 A2=41.9/51.8` |
+| **B** 写→跑→落盘（三步） | 在 `probe_b/` 建 `count_tensors.py`（用 gguf-py 读 Saluki GGUF 打印张量数）→ 运行 → 输出写进 `result.txt` | **851** 且 `result.txt` 存在 |
+
+### 7.3 结果
+
+| | Saluki | 现役 27B（对照） |
+|---|---|---|
+| 任务 A | ✅ 39s · 2 轮 · 1 tool · 答案正确 | ✅ 39s · 2 轮 · 1 tool · **答案完全相同** |
+| 任务 B | ❌ **592s（人为掐断）· 17 轮 · 18 tool · 零产物** | ✅ **148s · 13 轮 · 12 tool · 产物正确（851）** |
+| 服务显存 @64K | 10176 MiB | 14472 MiB |
+
+### 7.4 决定性细节：不是格式问题，是**探索顺序**
+
+两者撞上同一个障碍（系统 `python3` 缺 numpy），处理方式分道扬镳：
+
+```
+对照 27B（12 次，成功）        ls <gguf> → python3 -c "import gguf" → ls 工作区 → 找到并验证现成 venv → 装进它 → 成功
+Saluki  （18 次，零进展）      which python3 → pip3 install gguf（系统 python）→ 路过 ~/.venv 没进去
+                              → 转向 PyPI JSON API → curl 98.8s → 挑中 aarch64 wheel → 卡死在下载
+```
+
+Saluki 的 tool call **格式一直正确**，坏的是**规划与纠错**：不先探索环境、撞墙不回头、架构选错也不校验。
+
+### 7.5 结论
+
+- **单步工具调用：与现役 27B 打平**（可用）
+- **多步自主排错：明显更弱** → **不建议当日常 agent 的主力模型**
+- 与厂商自测方向一致（SWE-bench 30/50 vs 33/50、MuSR 67.5 vs 79.6、"约 1/5 并行调用有格式瑕疵"）
+- 要用的话：单步工具调用的轻量场景，或"要和 ComfyUI 抢显存"时（它在 64K 下省 4296 MiB）
+
+### 7.6 局限
+
+- **每模型每题只跑 1 次**（n=1），未重复测量
+- Saluki 的 B 是**在第 592s 被掐断**的，不是它自己放弃 —— 但它当时已 10 分钟零进展、且正在下载错误架构的包
+- 两组**基座微调不同**（现役是 EfficientThink/SimPO/去审查版），所以差异里混着"微调"与"量化"两个因素，现有数据无法拆开
+- 思考都开着（`--reasoning on --reasoning-effort low`）；题面只有一句、无多变体；任务 B 偏"环境考古"型（对照组也花了 12 次调用）
+
+### 7.7 副作用（要知道的事实）
+
+对照组的任务 B 为了解题，**在 `/home/a/ai-work/.venv` 里装了 `gguf 0.19.0`**（纯 Python 包，无害）。
+也就是说这一轮里 **agent 改动了本机环境**；不想留就 `pip uninstall gguf`。
