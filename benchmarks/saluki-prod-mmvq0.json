@@ -1,0 +1,139 @@
+{
+  "label": "saluki-prod-mmvq0",
+  "model": "Underdog-Saluki-27B-1.0-IQ2-mix.gguf",
+  "file_gib": 7.356,
+  "ctx": 32768,
+  "spec_mtp": false,
+  "mmvq_all": "0",
+  "extra": "--fit off --spec-type draft-dflash --spec-draft-model /home/a/ai-work/models/llm/Q2-LynnStyle/dflash2-qwen38-27b-Q4_K_M.gguf --spec-draft-n-max 6 --spec-draft-type-k f16 --spec-draft-type-v f16 --chat-template-file /home/a/ai-work/models/llm/chat_template.jinja --reasoning on --reasoning-effort low --batch-size 1024 --ubatch-size 512 --threads-batch 28",
+  "load_seconds": 5.0,
+  "vram_gpu_used_before": 168,
+  "vram_server_mib": 11510,
+  "vram_gpu_used_after": 11678,
+  "assertion_failures": [],
+  "props": {
+    "model_path": "/home/a/ai-work/models/llm/Saluki/Underdog-Saluki-27B-1.0-IQ2-mix.gguf",
+    "build_info": "b10905-16378d93f"
+  },
+  "results": [
+    {
+      "id": "sanity_echo",
+      "secs": 0.7,
+      "content": "PONG",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 3,
+      "decode_tps": 18.5,
+      "decode_n": 3,
+      "prompt_n": 23,
+      "prefill_ms": 320.955,
+      "expect": "PONG",
+      "ok": true
+    },
+    {
+      "id": "sanity_math",
+      "secs": 0.84,
+      "content": "402",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 4,
+      "decode_tps": 13.0,
+      "decode_n": 4,
+      "prompt_n": 33,
+      "prefill_ms": 334.088,
+      "expect": "402",
+      "ok": true
+    },
+    {
+      "id": "sanity_zh",
+      "secs": 1.92,
+      "content": "因为清晨气温低，竹林中蒸发的水蒸气遇冷凝结成小水滴，从而形成了雾。",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 23,
+      "decode_tps": 16.6,
+      "decode_n": 23,
+      "prompt_n": 24,
+      "prefill_ms": 316.342,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "coherence_en",
+      "secs": 2.23,
+      "content": "A lone swordsman, his blade gleaming with the first light of dawn, stands motionless amidst the towering bamboo stalks, waiting for the wind to stir the leaves into a whispering veil.",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 41,
+      "decode_tps": 24.5,
+      "decode_n": 41,
+      "prompt_n": 27,
+      "prefill_ms": 321.683,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "tool_single",
+      "secs": 2.16,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\",\"unit\":\"c\"}"
+        }
+      ],
+      "n_tool_calls": 1,
+      "completion_tokens": 40,
+      "decode_tps": 60.8,
+      "decode_n": 40,
+      "prompt_n": 410,
+      "prefill_ms": 1257.331,
+      "expect": "tool:get_weather",
+      "ok": true
+    },
+    {
+      "id": "tool_parallel",
+      "secs": 2.7,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\"}"
+        },
+        {
+          "name": "get_local_time",
+          "args": "{\"city\":\"Tokyo\"}"
+        }
+      ],
+      "n_tool_calls": 2,
+      "completion_tokens": 56,
+      "decode_tps": 56.4,
+      "decode_n": 56,
+      "prompt_n": 474,
+      "prefill_ms": 1309.113,
+      "expect": "2 calls",
+      "ok": true
+    },
+    {
+      "id": "thinking_on",
+      "secs": 8.17,
+      "content": "The ball costs **5 cents**.\n\nLet the ball cost be *x*. Then the bat costs *x* + 1.00.\n\nx + (x + 1.00) = 1.10\n2x = 0.10\nx = **0.05**\n\nThe ball is 5 cents, and the bat is $1.05. (The common mistake is to say the ball is 10 cents, but then the bat would be $1.10, making the total $1.20.)",
+      "reasoning_chars": 478,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 311,
+      "decode_tps": 43.4,
+      "decode_n": 311,
+      "prompt_n": 72,
+      "prefill_ms": 600.16,
+      "expect": null,
+      "ok": null
+    }
+  ]
+}

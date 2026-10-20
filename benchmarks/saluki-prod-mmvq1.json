@@ -1,0 +1,139 @@
+{
+  "label": "saluki-prod-mmvq1",
+  "model": "Underdog-Saluki-27B-1.0-IQ2-mix.gguf",
+  "file_gib": 7.356,
+  "ctx": 32768,
+  "spec_mtp": false,
+  "mmvq_all": "1",
+  "extra": "--fit off --spec-type draft-dflash --spec-draft-model /home/a/ai-work/models/llm/Q2-LynnStyle/dflash2-qwen38-27b-Q4_K_M.gguf --spec-draft-n-max 6 --spec-draft-type-k f16 --spec-draft-type-v f16 --chat-template-file /home/a/ai-work/models/llm/chat_template.jinja --reasoning on --reasoning-effort low --batch-size 1024 --ubatch-size 512 --threads-batch 28",
+  "load_seconds": 5.0,
+  "vram_gpu_used_before": 168,
+  "vram_server_mib": 11510,
+  "vram_gpu_used_after": 11678,
+  "assertion_failures": [],
+  "props": {
+    "model_path": "/home/a/ai-work/models/llm/Saluki/Underdog-Saluki-27B-1.0-IQ2-mix.gguf",
+    "build_info": "b10905-16378d93f"
+  },
+  "results": [
+    {
+      "id": "sanity_echo",
+      "secs": 0.68,
+      "content": "PONG",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 3,
+      "decode_tps": 20.9,
+      "decode_n": 3,
+      "prompt_n": 23,
+      "prefill_ms": 316.053,
+      "expect": "PONG",
+      "ok": true
+    },
+    {
+      "id": "sanity_math",
+      "secs": 0.81,
+      "content": "402",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 4,
+      "decode_tps": 14.1,
+      "decode_n": 4,
+      "prompt_n": 33,
+      "prefill_ms": 326.707,
+      "expect": "402",
+      "ok": true
+    },
+    {
+      "id": "sanity_zh",
+      "secs": 1.74,
+      "content": "因为清晨气温低，竹林中蒸发的水蒸气遇冷凝结成小水滴，从而形成了雾。",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 23,
+      "decode_tps": 19.0,
+      "decode_n": 23,
+      "prompt_n": 24,
+      "prefill_ms": 313.948,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "coherence_en",
+      "secs": 1.74,
+      "content": "A lone swordsman, his blade gleaming with the first light of dawn, stands motionless amidst the towering bamboo stalks, waiting for the wind to stir the leaves.",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 36,
+      "decode_tps": 30.1,
+      "decode_n": 36,
+      "prompt_n": 27,
+      "prefill_ms": 310.95,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "tool_single",
+      "secs": 2.08,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\",\"unit\":\"c\"}"
+        }
+      ],
+      "n_tool_calls": 1,
+      "completion_tokens": 40,
+      "decode_tps": 68.9,
+      "decode_n": 40,
+      "prompt_n": 410,
+      "prefill_ms": 1244.884,
+      "expect": "tool:get_weather",
+      "ok": true
+    },
+    {
+      "id": "tool_parallel",
+      "secs": 2.58,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\"}"
+        },
+        {
+          "name": "get_local_time",
+          "args": "{\"city\":\"Tokyo\"}"
+        }
+      ],
+      "n_tool_calls": 2,
+      "completion_tokens": 56,
+      "decode_tps": 63.7,
+      "decode_n": 56,
+      "prompt_n": 474,
+      "prefill_ms": 1291.364,
+      "expect": "2 calls",
+      "ok": true
+    },
+    {
+      "id": "thinking_on",
+      "secs": 4.47,
+      "content": "The ball costs **5 cents** ($0.05).\n\n**Verification:**\n- Ball = $0.05\n- Bat = $0.05 + $1.00 = $1.05\n- Total = $0.05 + $1.05 = $1.10 ✓",
+      "reasoning_chars": 277,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 209,
+      "decode_tps": 60.1,
+      "decode_n": 209,
+      "prompt_n": 72,
+      "prefill_ms": 586.452,
+      "expect": null,
+      "ok": null
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "label": "baseline-prod-dflash2",
+  "model": "Qwen3.8-27B-EfficientThink-SimPO-Q2-LynnStyle.gguf",
+  "file_gib": 12.107,
+  "ctx": 32768,
+  "spec_mtp": false,
+  "mmvq_all": "1",
+  "extra": "--fit off --spec-type draft-dflash --spec-draft-model /home/a/ai-work/models/llm/Q2-LynnStyle/dflash2-qwen38-27b-Q4_K_M.gguf --spec-draft-n-max 6 --chat-template-file /home/a/ai-work/models/llm/chat_template.jinja --reasoning on --reasoning-effort low --batch-size 1024 --ubatch-size 512 --threads-batch 28",
+  "load_seconds": 6.2,
+  "vram_gpu_used_before": 168,
+  "vram_server_mib": 15806,
+  "vram_gpu_used_after": 15974,
+  "assertion_failures": [],
+  "props": {
+    "model_path": "/home/a/ai-work/models/llm/Q2-LynnStyle/Qwen3.8-27B-EfficientThink-SimPO-Q2-LynnStyle.gguf",
+    "build_info": "b10905-16378d93f"
+  },
+  "results": [
+    {
+      "id": "sanity_echo",
+      "secs": 0.72,
+      "content": "PONG",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 3,
+      "decode_tps": 22.7,
+      "decode_n": 3,
+      "prompt_n": 23,
+      "prefill_ms": 299.712,
+      "expect": "PONG",
+      "ok": true
+    },
+    {
+      "id": "sanity_math",
+      "secs": 0.77,
+      "content": "402",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 4,
+      "decode_tps": 16.1,
+      "decode_n": 4,
+      "prompt_n": 33,
+      "prefill_ms": 306.029,
+      "expect": "402",
+      "ok": true
+    },
+    {
+      "id": "sanity_zh",
+      "secs": 2.16,
+      "content": "因为夜间气温降低使空气中的水汽在竹叶和地面上凝结成微小水滴，清晨阳光照射后这些水滴蒸发悬浮，从而形成了雾。",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 30,
+      "decode_tps": 18.3,
+      "decode_n": 30,
+      "prompt_n": 24,
+      "prefill_ms": 291.383,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "coherence_en",
+      "secs": 1.87,
+      "content": "Drenched in the pale, ethereal light of dawn, the swordsman stood motionless among the towering bamboo stalks, his blade resting lightly against his shoulder as he waited for the first breath of the morning to reveal his enemy.",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 48,
+      "decode_tps": 36.4,
+      "decode_n": 48,
+      "prompt_n": 27,
+      "prefill_ms": 299.698,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "tool_single",
+      "secs": 2.01,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\",\"unit\":\"c\"}"
+        }
+      ],
+      "n_tool_calls": 1,
+      "completion_tokens": 40,
+      "decode_tps": 69.9,
+      "decode_n": 40,
+      "prompt_n": 410,
+      "prefill_ms": 1172.887,
+      "expect": "tool:get_weather",
+      "ok": true
+    },
+    {
+      "id": "tool_parallel",
+      "secs": 2.36,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\"}"
+        },
+        {
+          "name": "get_local_time",
+          "args": "{\"city\":\"Tokyo\"}"
+        }
+      ],
+      "n_tool_calls": 2,
+      "completion_tokens": 56,
+      "decode_tps": 75.3,
+      "decode_n": 56,
+      "prompt_n": 474,
+      "prefill_ms": 1201.16,
+      "expect": "2 calls",
+      "ok": true
+    },
+    {
+      "id": "thinking_on",
+      "secs": 7.09,
+      "content": "## The ball costs **$0.05** (5 cents).\n\nHere's why:\n\n- Ball = $0.05\n- Bat = $1.05 (which is $1.00 more than the ball)\n- Total = $0.05 + $1.05 = **$1.10** ✓\n\nThis is a well-known problem (popularized by Daniel Kahneman) that trips up many people. The intuitive but incorrect answer is 10 cents — but if the ball were $0.10 and the bat were $1.00 *more*, the bat would be $1.10, making the total $1.20, not $1.10.",
+      "reasoning_chars": 576,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 377,
+      "decode_tps": 61.5,
+      "decode_n": 377,
+      "prompt_n": 72,
+      "prefill_ms": 554.935,
+      "expect": null,
+      "ok": null
+    }
+  ]
+}

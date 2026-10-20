@@ -1,0 +1,139 @@
+{
+  "label": "baseline-q2-lynnstyle",
+  "model": "Qwen3.8-27B-EfficientThink-SimPO-Q2-LynnStyle.gguf",
+  "file_gib": 12.107,
+  "ctx": 32768,
+  "spec_mtp": false,
+  "mmvq_all": "1",
+  "extra": "",
+  "load_seconds": 5.5,
+  "vram_gpu_used_before": 168,
+  "vram_server_mib": 13224,
+  "vram_gpu_used_after": 13392,
+  "assertion_failures": [],
+  "props": {
+    "model_path": "/home/a/ai-work/models/llm/Q2-LynnStyle/Qwen3.8-27B-EfficientThink-SimPO-Q2-LynnStyle.gguf",
+    "build_info": "b10905-16378d93f"
+  },
+  "results": [
+    {
+      "id": "sanity_echo",
+      "secs": 0.59,
+      "content": "PONG",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 3,
+      "decode_tps": 20.1,
+      "decode_n": 3,
+      "prompt_n": 23,
+      "prefill_ms": 247.863,
+      "expect": "PONG",
+      "ok": true
+    },
+    {
+      "id": "sanity_math",
+      "secs": 0.64,
+      "content": "402",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 4,
+      "decode_tps": 21.1,
+      "decode_n": 4,
+      "prompt_n": 33,
+      "prefill_ms": 256.233,
+      "expect": "402",
+      "ok": true
+    },
+    {
+      "id": "sanity_zh",
+      "secs": 1.87,
+      "content": "因为夜间气温降低使空气中的水汽在竹叶和地面上凝结成微小水滴，清晨阳光照射后这些水滴蒸发并悬浮在空中，从而形成了雾。",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 32,
+      "decode_tps": 22.6,
+      "decode_n": 32,
+      "prompt_n": 24,
+      "prefill_ms": 249.838,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "coherence_en",
+      "secs": 2.57,
+      "content": "Drenched in the pale, ethereal light of dawn, the swordsman stood motionless among the towering bamboo stalks, his blade resting lightly against his shoulder as he waited for the first breath of the morning to reveal his enemy.",
+      "reasoning_chars": 0,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 48,
+      "decode_tps": 22.7,
+      "decode_n": 48,
+      "prompt_n": 27,
+      "prefill_ms": 249.059,
+      "expect": null,
+      "ok": null
+    },
+    {
+      "id": "tool_single",
+      "secs": 2.71,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\",\"unit\":\"c\"}"
+        }
+      ],
+      "n_tool_calls": 1,
+      "completion_tokens": 40,
+      "decode_tps": 22.4,
+      "decode_n": 40,
+      "prompt_n": 299,
+      "prefill_ms": 720.897,
+      "expect": "tool:get_weather",
+      "ok": true
+    },
+    {
+      "id": "tool_parallel",
+      "secs": 3.65,
+      "content": "",
+      "reasoning_chars": 0,
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "args": "{\"city\":\"Chengdu\"}"
+        },
+        {
+          "name": "get_local_time",
+          "args": "{\"city\":\"Tokyo\"}"
+        }
+      ],
+      "n_tool_calls": 2,
+      "completion_tokens": 56,
+      "decode_tps": 22.5,
+      "decode_n": 56,
+      "prompt_n": 363,
+      "prefill_ms": 828.41,
+      "expect": "2 calls",
+      "ok": true
+    },
+    {
+      "id": "thinking_on",
+      "secs": 4.65,
+      "content": "The ball costs **$0.05** (5 cents).",
+      "reasoning_chars": 154,
+      "tool_calls": [],
+      "n_tool_calls": 0,
+      "completion_tokens": 86,
+      "decode_tps": 22.5,
+      "decode_n": 86,
+      "prompt_n": 84,
+      "prefill_ms": 471.418,
+      "expect": null,
+      "ok": null
+    }
+  ]
+}
