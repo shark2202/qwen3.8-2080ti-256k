@@ -169,3 +169,56 @@ Saluki 的 tool call **格式一直正确**，坏的是**规划与纠错**：不
 
 对照组的任务 B 为了解题，**在 `/home/a/ai-work/.venv` 里装了 `gguf 0.19.0`**（纯 Python 包，无害）。
 也就是说这一轮里 **agent 改动了本机环境**；不想留就 `pip uninstall gguf`。
+
+---
+
+## 8. 怎么在本机把它跑起来（2026-10-21 已实测通）
+
+### 8.1 接线（`~/.pi/agent/models.json`）
+
+已写入并生效（备份 `models.json.bak.20261020-233142`；**原有 provider 与 key 未动**）：
+
+```json
+"llama-local":  { "api": "openai-completions", "baseUrl": "http://127.0.0.1:8080/v1",
+                  "apiKey": "local-no-auth", "models": [{ "id": "qwen38-27b-lynstyle", "contextWindow": 65536 }] }
+"llama-saluki": { "api": "openai-completions", "baseUrl": "http://127.0.0.1:8081/v1",
+                  "apiKey": "local-no-auth", "models": [{ "id": "saluki-27b", "contextWindow": 65536 }] }
+```
+
+`apiKey` 是占位符 —— 本机 llama-server 没设 `--api-key`（`Host=127.0.0.1` 只对 loopback）。
+
+### 8.2 服务（沿用仓库既有机制，**启动脚本零改动**）
+
+```bash
+cd ~/ai-work/qwen3.8-2080ti-256k
+CONFIG_PATH=config.saluki.sh scripts/check-config.sh      # 已验证：全绿
+CONFIG_PATH=config.saluki.sh scripts/start-llama.sh       # → 127.0.0.1:8081，别名 saluki-27b
+```
+
+`config.saluki.sh` 是**本机配置**（含绝对路径），按设计与 `config.sh` / `config.small.sh` 一样进 `.gitignore`。
+值的选择依据见 §2/§4/§8.3：64K ctx、`q8_0` KV、`draft-dflash,ngram-mod` 深度 6、`GGML_MMVQ_MAX=4` + **`GGML_MMVQ_ALL=1`**（实测对 Saluki 更快）。
+
+⚠️ **两个 27B 不能用同一个启动器先后起**：该脚本按二进制路径杀同款进程（`/proc/*/exe` 匹配），
+所以第二次会把第一个杀掉。端口分开（8080 / 8081）只是避免撞端口，**不解决互杀**。
+要两个同时在，只能各起一次并**确认两个端口都在监听**。
+
+### 8.3 ⚠️ 起服务前必须先腾显存（同一个坑，第二次踩）
+
+2026-10-21 实测：ComfyUI 队列**空**，整卡仍占 **17284 MiB**（渲染完权重继续驻留）→ llama-server
+`cudaMalloc failed: out of memory` → 服务起不来，pi 那边只看到连接失败。
+
+```bash
+curl -s -X POST http://127.0.0.1:8188/free \
+  -H 'Content-Type: application/json' -d '{"unload_models":true,"free_memory":true}'
+# 实测 17732 → 260 MiB；之后再确认整卡占用 <1.5 GB 才起 llama-server
+```
+
+### 8.4 端到端验证（已通）
+
+```bash
+pi --provider llama-saluki --model saluki-27b --no-session --print "…"
+→ 正常返回 GGUF 说明 + 最小 llama-server 命令
+   服务端日志：draft acceptance = 0.276（mean len 2.65）→ 投机确实在跑
+```
+
+服务常驻：**12758 MiB @64K**（含 DFlash2 草稿；无投机时 10176 MiB）。
