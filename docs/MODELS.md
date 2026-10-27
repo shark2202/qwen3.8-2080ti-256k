@@ -85,6 +85,22 @@ in the GGUF:
   `length` with **zero** answer tokens). If you use a different template, change
   reasoning depth at the client instead and re-check the defaults before
   comparing speed.
+- **How to change it per request (measured 2026-10-18)**: the OpenAI-style
+  `reasoning_effort` field is **not mapped** by this engine build — `none`, `low`
+  and the default produced identical behaviour (thinking stayed on, and a
+  150-token budget was consumed entirely by the thinking block, leaving an empty
+  answer). The override that actually reaches the template is
+  `chat_template_kwargs`:
+
+  ```json
+  {"chat_template_kwargs": {"reasoning_effort": "none"}}
+  ```
+
+  with `none` the thinking block was **0 tokens** and decode reached
+  **60.7 tok/s** on a 27B prompt that gave 41.5 tok/s with `low` (DFlash2 draft
+  acceptance 0.79 vs 0.42). The launchers' `--reasoning-effort low` stays as the
+  server-side default; clients that want to turn thinking off must use the kwargs
+  form above.
 
 ## 3. Licenses
 

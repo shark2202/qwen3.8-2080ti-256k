@@ -74,7 +74,9 @@ def main() -> int:
         "response_format": {"type": "json_object"},
     }
     if a.thinking != "medium":  # medium is the template's default
-        payload["reasoning_effort"] = a.thinking
+        # 必须走 chat_template_kwargs：OpenAI 的 reasoning_effort 字段本引擎不映射（实测 no-op），
+        # kwargs 才真正传进模板；实测 none 关思考后 60.7 tok/s，low 时 41.5
+        payload["chat_template_kwargs"] = {"reasoning_effort": a.thinking}
 
     t0 = time.time()
     try:

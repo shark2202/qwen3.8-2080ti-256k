@@ -131,6 +131,55 @@ scripts/h3turing.local.sh demo --prompt "$P" --seed 3013 --out ./h3_demo_output
 - **显存卸载的机制**（三层：进程内丢引用 → `torch.cuda.empty_cache()` 把块还给驱动 → 跨进程只能杀）与 22 GB 账本，
   见 `~/ai-work/minimax-h3-turing/RUNBOOK.local.md` §1.2；节点源码目录的 README 也有一份精简版
 
+## 归集后验证（2026-10-18，权重搬到 `ai-work/models/llm/` 之后）
+
+| 项 | 方式 | 结果 |
+|---|---|---|
+| 配置校验 | `scripts/check-config.sh` | 目标/草稿/mmproj/模板 + 两个引擎二进制全部 `OK`（都指向新模式路径） |
+| 模式 A · 27B（128K + DFlash2） | `start-llama.sh` | 就绪 21s、**19810 MiB**、别名 `qwen3.8-local`；日志确认草稿从 `llm/Q2-LynnStyle/dflash2-…` 加载 |
+| 模式 A · 9B（ngram-mod，无草稿） | `CONFIG_PATH=config.small.sh start-llama.sh` | 就绪 6s、**6776 MiB**、**68–70 tok/s** |
+| 模式 B · 27B（KVMem 256K 逻辑） | `start-kvmem.sh` | 就绪 12s、**19104 MiB**、`kvmem=1 method=retrieval`、生成 OK（24.8 tok/s，检索式 KV 慢一档） |
+| 剧本 CLI + 节点 | `scripts/screenplay.py` / QwenScript 节点 | CLI 2 镜 489 tokens / 7.2s（68.0 tok/s）；节点 427 tokens / 6.2s（68.5 tok/s），起停都干净 |
+| 权重复核 | `fetch_models.sh --check --only llm/` | **8/8 OK**（26 GiB，2m33s） |
+
+**这次验证暴露的三件事（前两件已改进工具）**
+
+- **`reasoning_effort` 必须走 `chat_template_kwargs`**：OpenAI 那个字段本引擎**不映射**——`none` / `low` / 默认三档
+  行为完全一样（都在思考，150 tokens 全被思考块吃掉、正文为空）。正确写法
+  `{"chat_template_kwargs": {"reasoning_effort": "none"}}`：思考块 **0 tokens**、正文 901 字、**60.7 tok/s**
+  （同一提示词 `low` 时 41.5 tok/s，草稿接受率 0.42 → 0.79）。`screenplay.py` 与 ComfyUI 的 QwenScript 节点已改为 kwargs。
+- **模式 B 起服务前必须等端口真空**：`llama-kvmem-server` 是**先加载 13 GB 再 bind**，端口还被旧连接占着就吐
+  `KVMEM_STARTUP_ERROR cannot bind 0.0.0.0:8080`（此时权重已加载、进程已退，白花几秒）。切模式前先
+  `ss -tan | grep :8080` 确认为空（模式 A 无此问题：它先检查端口再加载）。
+- **27B 的 tok/s 取决于"思考开不开"**：手册头条 66.92 tok/s 对应短样本/代码类 + 思考关闭的场景；本机同一提示词实测
+  **60.7（关思考）↔ 41.5（low）**。判断依据就在服务端日志的 `draft acceptance`（0.79 vs 0.42）——接受率一掉，tok/s 必掉。
+
+## API 加载 / 卸载模型（router 模式，**只有模式 A 支持**）
+
+上游 `llama-server` 有一个 **router 模式**：不带 `-m` 启动 → 服务端**不加载任何模型**，之后用 HTTP API 按需
+加载/卸载模型实例（= 占用/释放显存）。本机实测（2026-10-18）：
+
+| 步骤 | 命令 | 结果 |
+|---|---|---|
+| 启动（无模型） | `llama-server --models-preset router.example.ini --models-max 1 --no-models-autoload --host 127.0.0.1 --port 8091` | **168 MiB / 1 进程**；`GET /models` 列出两个模型，`status.value = unloaded` |
+| 加载 | `curl -X POST :8091/models/load -d '{"model":"qwen38-27b"}'` | `{"success":true}` → **6s 后 `loaded`、19718 MiB / 2 进程**；生成正常 |
+| 卸载 | `curl -X POST :8091/models/unload -d '{"model":"qwen38-27b"}'` | `{"success":true}` → **2s 后 `unloaded`、168 MiB / 1 进程** |
+| 9B 同理 | load / unload `qwen38-9b-heretic` | **5980 MiB** ↔ 168 MiB |
+
+- 请求路由：POST 用 body 里的 `"model"` 字段；GET 用 `?model=`（`GET /models` 列表、`?reload=1` 重扫、`/models/sse` 事件流）。
+  子进程各自监听 `127.0.0.1:<子进程 pid>`，由路由器转发。
+- `--models-max 1` 时路由器**会自动换出**旧模型（实测 load 27B 时 9B 被换出去）；但若旧子进程还在停止过程中，
+  显式 `load` 会返回 500 `model limit reached, try again later` → 重新试一次，或先 `unload` 并轮询到 `unloaded`。
+- ⚠️ **必须写进 preset 的两个参数**（我各撞过一次，都会让 27B 直接 OOM）：
+  - `fit = off`（= `--fit off`，与 `start-llama.sh` 一致）：不关会被"按空闲显存自动放缩"的 fit 逻辑吃光余量
+  - `parallel = 1`：**默认是 4**，会让 `n_slots = 4` → **KV cache 放大 4 倍**（27B + 128K 必炸）
+  - 其余照 `start-llama.sh` 补齐：`batch-size/ubatch-size/threads`、`chat-template-file`，以及模型专属的
+    `model-draft` / `spec-type` / `spec-draft-n-max` / `spec-draft-type-k|v`
+- preset 格式：INI，`[模型名]` 段，键 = 命令行参数去掉前导横线（`--ctx-size` → `c` 或 `ctx-size`），
+  `[*]` 段是全局默认；`load-on-startup = false` 才不自动加载。样例已存 **`router.example.ini`**。
+- **模式 B（KVMem）没有 router**：fork 里没有 `models_dir` / `/models` 的 load·unload 路由（二进制里只有
+  `GET /v1/models`），`-m` 是必需的 → KVMem 下"释放显存"只能靠进程退出（就是 H3 节点现在的做法）。
+
 ## 仍未验证
 
 - 模式 B（KVMem）配小模型没跑过；`patches/` 里 KVMem 补丁对架构参数的假设没核对。
